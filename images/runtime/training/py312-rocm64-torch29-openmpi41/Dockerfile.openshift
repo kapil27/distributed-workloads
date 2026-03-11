@@ -15,7 +15,10 @@ LABEL name="training:py312-rocm64-torch29-openmpi41" \
 
 USER 0
 
-RUN dnf install -y openmpi openssh-server && dnf clean all
+# ODH base has minimal UBI repos; openmpi not in default. Add EPEL for openmpi.
+RUN dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
+    dnf install -y openmpi openssh-server && \
+    dnf clean all
 
 RUN ln -s /usr/lib64/openmpi/bin/orted /usr/bin/orted \
     && ln -s /usr/lib64/openmpi/bin/mpiexec /usr/bin/mpiexec
