@@ -1,0 +1,44 @@
+# BuildConfig to build ROCm MPI image on OpenShift (amd64)
+# Uses Dockerfile.openshift (ODH base, UBI) - no RHSM/entitlement needed.
+# Dockerfile.konflux uses AIPCC base (RHEL, needs Konflux RHSM injection).
+#
+# Apply:   oc apply -f manifests/buildconfig-openshift.yaml -n <namespace>
+# Build:   oc start-build rocm-mpi-openmpi41 --follow -n <namespace>
+# Output:  ImageStreamTag <namespace>/mpi-rocm-openmpi41:latest
+#
+# To use a different base (e.g. mirrored): add strategy.dockerStrategy.from override
+---
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: rocm-mpi-openmpi41
+  annotations:
+    description: "Build ROCm MPI training image (py312-rocm64-torch29-openmpi41) from Dockerfile.konflux"
+spec:
+  completionDeadlineSeconds: 7200  # 2 hours
+  runPolicy: Serial
+  source:
+    type: Git
+    git:
+      uri: https://github.com/kapil27/distributed-workloads
+      ref: mpi-rocm-image
+    contextDir: images/runtime/training/py312-rocm64-torch29-openmpi41
+  strategy:
+    type: Docker
+    dockerStrategy:
+      dockerfilePath: Dockerfile.openshift
+      # Optional: override base if cluster can't pull from quay.io
+      # from:
+      #   kind: DockerImage
+      #   name: <your-registry>/rocm-base:3.4.0-ea.1
+  output:
+    to:
+      kind: ImageStreamTag
+      name: mpi-rocm-openmpi41:latest
+  resources:
+    requests:
+      cpu: "2"
+      memory: 8Gi
+    limits:
+      cpu: "4"
+      memory: 16Gi

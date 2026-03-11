@@ -1,0 +1,67 @@
+# ROCm MPI - OpenShift build variant (no RHSM/entitlement)
+# Uses ODH base (UBI) instead of AIPCC base (RHEL) for builds outside Konflux.
+# Konflux builds use Dockerfile.konflux (AIPCC base + RHSM injection).
+#
+FROM quay.io/opendatahub/odh-training-rocm64-torch29-py312:odh-stable
+
+ARG SSH_PORT=2222
+
+LABEL name="training:py312-rocm64-torch29-openmpi41" \
+      summary="ROCm 6.4 Python 3.12 PyTorch 2.9.1 OpenMPI 4.1 image based on UBI9 for Training" \
+      description="ROCm 6.4 Python 3.12 PyTorch 2.9.1 OpenMPI 4.1 image based on UBI9 for Training" \
+      io.k8s.display-name="ROCm 6.4 Python 3.12 PyTorch 2.9.1 OpenMPI 4.1 base image for Training" \
+      io.k8s.description="ROCm 6.4 Python 3.12 PyTorch 2.9.1 OpenMPI 4.1 image based on UBI9 for Training" \
+      authoritative-source-url="https://github.com/opendatahub-io/distributed-workloads"
+
+USER 0
+
+RUN dnf install -y openmpi openssh-server && dnf clean all
+
+RUN ln -s /usr/lib64/openmpi/bin/orted /usr/bin/orted \
+    && ln -s /usr/lib64/openmpi/bin/mpiexec /usr/bin/mpiexec
+
+COPY mpirun_wrapper.sh /usr/local/bin/mpirun
+RUN chmod +x /usr/local/bin/mpirun
+
+RUN printf '#!/bin/sh\nexec /opt/app-root/bin/python "$@"\n' > /usr/local/bin/python \
+    && chmod +x /usr/local/bin/python
+
+RUN echo "LD_LIBRARY_PATH=/usr/lib64/openmpi/lib" >> /etc/environment
+
+RUN mkdir -p /var/run/sshd
+
+RUN sed -i "s/[ #]\(.*StrictHostKeyChecking \).*/ \1no/g" /etc/ssh/ssh_config \
+    && echo "    UserKnownHostsFile /dev/null" >> /etc/ssh/ssh_config \
+    && echo "    Port ${SSH_PORT}" >> /etc/ssh/ssh_config \
+    && echo "    SendEnv PATH LD_LIBRARY_PATH" >> /etc/ssh/ssh_config
+
+RUN sed -i "s/#\(StrictModes \).*/\1no/g" /etc/ssh/sshd_config \
+    && sed -i "s/#\(Port \).*/\1${SSH_PORT}/g" /etc/ssh/sshd_config \
+    && echo "StrictModes no" >> /etc/ssh/sshd_config \
+    && echo "Port ${SSH_PORT}" >> /etc/ssh/sshd_config
+
+RUN dnf install -y rdma-core libibverbs librdmacm libibumad libmlx5 infiniband-diags && dnf clean all
+
+RUN mkdir -p /home/mpiuser /home/mpiuser/.openmpi && \
+    echo "PidFile /tmp/sshd.pid" > /home/mpiuser/.sshd_config && \
+    echo "HostKey /home/mpiuser/.ssh/id_rsa" >> /home/mpiuser/.sshd_config && \
+    echo "StrictModes no" >> /home/mpiuser/.sshd_config && \
+    echo "Port ${SSH_PORT}" >> /home/mpiuser/.sshd_config && \
+    echo "AcceptEnv PATH LD_LIBRARY_PATH" >> /home/mpiuser/.sshd_config
+
+# ODH base has Python deps; we only add s3fs if needed
+RUN pip install --no-cache-dir --no-deps s3fs==2025.9.0 2>/dev/null || true && \
+    chmod -R g+w /opt/app-root/lib/python3.12/site-packages 2>/dev/null || true
+
+RUN chgrp -R 0 /home/mpiuser && chmod -R g=u /home/mpiuser
+RUN chmod g=u /etc/passwd
+
+COPY uid_entrypoint.sh /usr/local/bin/uid_entrypoint.sh
+RUN chmod +x /usr/local/bin/uid_entrypoint.sh
+
+WORKDIR /home/mpiuser
+ENV HOME=/home/mpiuser
+ENV PATH=/usr/local/bin:$PATH:$HOME/.local/bin
+ENV LD_LIBRARY_PATH=/usr/lib64/openmpi/lib:${LD_LIBRARY_PATH}
+ENTRYPOINT ["/usr/local/bin/uid_entrypoint.sh"]
+USER 1001
