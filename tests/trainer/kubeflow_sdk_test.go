@@ -37,7 +37,7 @@ func TestKubeflowSdkKueueIntegration(t *testing.T) {
 }
 
 func TestKubeflowSdkOpenMPICudaKueueIntegration(t *testing.T) {
-	t.Skip("Skip due to issue RHOAIENG-61966")
+	t.Skip("Skip until midstream trainer lands the TrainJob CEL webhook fix (opendatahub-io/trainer#217 unrevert); kubeflow/trainer#3888 is closed upstream")
 	Tags(t, KftoCuda, MultiNodeGpu(2, support.NVIDIA))
 	test := support.With(t)
 	support.SetupKueue(test, initialKueueState, support.TrainJobFramework)

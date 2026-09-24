@@ -1,4 +1,6 @@
-FROM quay.io/aipcc/base-images/cuda-13.0-el9.6@sha256:3de8a37c9172aea6a15fe12aeeb9fd6be09a5a5ca419ec2e9fc2e16c3f0b138d
+# AIPCC-11203 / AIPCC-31781: CUDA-aware OpenMPI 4.1.6-7.el9ai + openmpi-cuda on RHEL 9.8.
+# Pin the 3.6 CUDA 13.0 base (not el9.6:3.3.0 / sha256:3de8a37c…, which is not CUDA-aware).
+FROM quay.io/aipcc/base-images/cuda-13.0-el9.8@sha256:84e928efbd8c3e4ca54a46a9d1f3406f9290204963f277b8bc19560b530117ae
 
 ARG SSH_PORT=2222
 

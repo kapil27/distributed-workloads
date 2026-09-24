@@ -103,7 +103,7 @@ func IsDefaultRuntime(name string) bool {
 // TrainingHubToDefaultClusterRuntime maps each Training Hub and pinned torch-distributed
 // runtime to its corresponding DefaultClusterTrainingRuntime. Both runtimes in
 // each pair are expected to have identical CTR specs (only metadata differs).
-// CTR names match manifests/rhoai/runtimes in opendatahub-io/trainer.
+// CTR names match manifests/runtimes in opendatahub-io/trainer-operator.
 var TrainingHubToDefaultClusterRuntime = map[string]string{
 	// Default (floating) runtimes
 	DefaultTrainingHubRuntimeCUDA: DefaultClusterTrainingRuntimeCUDA,
@@ -123,7 +123,7 @@ var ExpectedRuntimes = []ClusterTrainingRuntime{
 	{Name: DefaultClusterTrainingRuntimeCUDA, Image: "odh-th-torch-cuda-py312"},
 	{Name: DefaultClusterTrainingRuntimeROCm, Image: "odh-th-torch-rocm-py312"},
 	{Name: DefaultClusterTrainingRuntimeCPU, Image: "odh-th-torch-cpu-py312"},
-	//	{Name: DefaultClusterTrainingRuntimeOpenMPICUDA, Image: DefaultClusterTrainingRuntimeOpenMPICUDAImage},
+	{Name: DefaultClusterTrainingRuntimeOpenMPICUDA, Image: DefaultClusterTrainingRuntimeOpenMPICUDAImage},
 	{Name: "torch-distributed-cuda130-torch211-py312", Image: "odh-th-torch-cuda-py312"},
 	{Name: "torch-distributed-rocm714-torch211-py312", Image: "odh-th-torch-rocm-py312"},
 	{Name: "torch-distributed-cpu-torch211-py312", Image: "odh-th-torch-cpu-py312"},
