@@ -32,7 +32,6 @@ import (
 )
 
 func TestMultiNodeOpenMPITrainJob(t *testing.T) {
-	t.Skip("Skip until upstream Kueue fix is merged, see https://github.com/kubeflow/trainer/issues/3888")
 	Tags(t, KftoCuda, MultiNodeGpu(2, NVIDIA))
 	test := With(t)
 
@@ -101,7 +100,7 @@ func createMPITrainJob(test Test, namespace, scriptConfigMapName string) *traine
 			},
 			RuntimePatches: []trainerv1alpha1.RuntimePatch{
 				{
-					Manager: "test-mpi",
+					Manager: "opendatahub.io/test-mpi",
 					TrainingRuntimeSpec: &trainerv1alpha1.TrainingRuntimeSpecPatch{
 						Template: &trainerv1alpha1.JobSetTemplatePatch{
 							Spec: &trainerv1alpha1.JobSetSpecPatch{
